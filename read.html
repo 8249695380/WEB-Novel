@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Your Novels</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 p-6">
+  <h2 class="text-2xl font-bold mb-4">Your Novels</h2>
+  <div id="novels" class="space-y-6"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("Please log in.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const res = await fetch('https://your-backend-url.onrender.com/api/novels', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      const novelsDiv = document.getElementById("novels");
+      data.forEach(novel => {
+        const novelEl = document.createElement("div");
+        novelEl.className = "bg-white p-4 rounded shadow";
+
+        novelEl.innerHTML = `
+          <h3 class="text-xl font-semibold">${novel.title}</h3>
+          <p class="mt-2">${novel.content}</p>
+          <div class="mt-4 space-x-2">
+            <button onclick="editNovel('${novel._id}', '${novel.title}', \`${novel.content.replace(/`/g, '\\`')}\`)"
+              class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Edit</button>
+            <button onclick="deleteNovel('${novel._id}')"
+              class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</button>
+          </div>
+        `;
+        novelsDiv.appendChild(novelEl);
+      });
+    });
+
+    async function deleteNovel(id) {
+      const token = localStorage.getItem('token');
+      if (confirm("Delete this novel?")) {
+        await fetch(`https://your-backend-url.onrender.com/api/novels/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        location.reload();
+      }
+    }
+
+    function editNovel(id, title, content) {
+      const newTitle = prompt("Edit title:", title);
+      const newContent = prompt("Edit content:", content);
+      if (newTitle && newContent) updateNovel(id, newTitle, newContent);
+    }
+
+    async function updateNovel(id, title, content) {
+      const token = localStorage.getItem('token');
+      await fetch(`https://your-backend-url.onrender.com/api/novels/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, content })
+      });
+      location.reload();
+    }
+  </script>
+</body>
+</html>
